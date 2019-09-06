@@ -34,7 +34,7 @@ public class WebServiceHello {
         		"  <title>Proyecto AREM</title>  \n" + 
         		"</head>\n" + 
         		"<body style=\"text-align: center\">   \n" + 
-        		"    <h1>Hola "+name+"! , esto es un ejemplo de HTML que recibe parámetros </h1>	\n" + 
+        		"    <h1>Hola "+name+"! , esto es un ejemplo de HTML que recibe parametros </h1>	\n" + 
         		"</body>\n" + 
         		"</html>\n" + 
         		"";
