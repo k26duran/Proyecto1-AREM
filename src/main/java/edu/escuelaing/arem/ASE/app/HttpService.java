@@ -145,8 +145,14 @@ public class HttpService {
 			out.write("HTTP/1.1 200 OK\r\n" + "Content-Type: text/html\r\n" + "\r\n");
 			if(resource.contains(":")) {
 				int i = resource.indexOf(":");
-				out.write(listaURLHandler.get(resource.substring(0, i)).procesar(new Object[]{resource.substring(i+1)}));
-			}else { out.write(listaURLHandler.get(resource).procesar());}
+				if(resource.contains(",")) {
+					String params=resource.substring(i+1);
+					Object [] objects= params.split(",");
+					out.write(listaURLHandler.get(resource.substring(0, i)).procesar(objects));
+				}else {
+					out.write(listaURLHandler.get(resource.substring(0, i)).procesar(new Object[]{resource.substring(i+1)}));
+				}
+				}else { out.write(listaURLHandler.get(resource).procesar());}
 			out.close();
 		} catch (Exception e) {
 			notFound404();

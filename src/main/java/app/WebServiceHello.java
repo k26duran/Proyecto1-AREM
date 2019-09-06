@@ -39,5 +39,19 @@ public class WebServiceHello {
         		"</html>\n" + 
         		"";
     }
+	@Web("ejemploParams")
+    public static String ejemploConParametros(String name, String name1) {
+        return "<!DOCTYPE html>\n" + 
+        		"<html>\n" + 
+        		"<head>\n" + 
+        		"  <meta charset=\"utf-8\" />\n" + 
+        		"  <title>Proyecto AREM</title>  \n" + 
+        		"</head>\n" + 
+        		"<body style=\"text-align: center\">   \n" + 
+        		"    <h1>Hola "+name+" y "+name1+"!, esto es un ejemplo de HTML que recibe parametros </h1>	\n" + 
+        		"</body>\n" + 
+        		"</html>\n" + 
+        		"";
+    }
 
 }
