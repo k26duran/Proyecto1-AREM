@@ -27,7 +27,7 @@ public class HttpService {
     private static Socket receiver;
     
 	/**
-	 * Método que inicializa el atributo listaURLHandler que tendrá todos los métodos con anotaciones del package app
+	 * Mï¿½todo que inicializa el atributo listaURLHandler que tendrï¿½ todos los mï¿½todos con anotaciones del package app
 	 */
 	public void init(){
 		try {
@@ -93,8 +93,8 @@ public class HttpService {
 	}
 
 	 /**
-     * En este método se identifica que tipo de solicitud se realizó al servidor
-     * @param address corresponde a la dirección del recurso que se desea obtener
+     * En este mï¿½todo se identifica que tipo de solicitud se realizï¿½ al servidor
+     * @param address corresponde a la direcciï¿½n del recurso que se desea obtener
      * @param cc corresponde al socket que hace la solicitud
 	 * @throws Exception 
      */
@@ -113,7 +113,7 @@ public class HttpService {
     }
     
     /**
-     * Este método publica una página html que ha sido solicitada en el servidor,
+     * Este mï¿½todo publica una pï¿½gina html que ha sido solicitada en el servidor,
      * @param address corresponde al nombre del archivo que se quiere obtener
      */
     private static void postHtml(String request){
@@ -132,7 +132,7 @@ public class HttpService {
         }
     }
     /**
-     * Este método publica un recurso dentro de la listaURLHandler en el servidor
+     * Este mï¿½todo publica un recurso dentro de la listaURLHandler en el servidor
      * @param address corresponde al path del recurso que se quiere obtener
      * @throws IOException
      */
@@ -143,14 +143,21 @@ public class HttpService {
 		for (int k = limit; k < address.length() && address.charAt(k) != ' '; k++) {resource += address.charAt(k);}
 		try {
 			out.write("HTTP/1.1 200 OK\r\n" + "Content-Type: text/html\r\n" + "\r\n");
-			if(resource.contains(":")) {
-				int i = resource.indexOf(":");
-				if(resource.contains(",")) {
-					String params=resource.substring(i+1);
-					Object [] objects= params.split(",");
+			if(resource.contains("?")) {
+				int i = resource.indexOf("?");
+				String params=resource.substring(i+1);
+				if(resource.contains("&")) {
+					String[] arrayP= params.split("&");
+					Object [] objects=new Object[arrayP.length];
+					int w=0;
+					for(String p: arrayP) {
+						objects[w]=p.split("=")[1];
+						w++;
+					}
 					out.write(listaURLHandler.get(resource.substring(0, i)).procesar(objects));
 				}else {
-					out.write(listaURLHandler.get(resource.substring(0, i)).procesar(new Object[]{resource.substring(i+1)}));
+					String other=resource.split("=")[1];
+					out.write(listaURLHandler.get(resource.substring(0, i)).procesar(new Object[]{other}));
 				}
 				}else { out.write(listaURLHandler.get(resource).procesar());}
 			out.close();
@@ -161,7 +168,7 @@ public class HttpService {
     }
     
     /**
-     * Este método publica una imagen con extension PNG en el servidor,
+     * Este mï¿½todo publica una imagen con extension PNG en el servidor,
      * @param address Corresponde al nombre de la imagen solicitada
      */
     private static void postImage(String address){
@@ -185,7 +192,7 @@ public class HttpService {
     }
     
     /**
-     * Se publica un página con un mensaje de error, esto se hace cuando un recurso no existe
+     * Se publica un pï¿½gina con un mensaje de error, esto se hace cuando un recurso no existe
      */
     private static void notFound404(){
         try{            
@@ -222,7 +229,7 @@ public class HttpService {
     }
     
     /**
-     * Este método cierra el archivo con el cual el servidor realiza su lectura
+     * Este mï¿½todo cierra el archivo con el cual el servidor realiza su lectura
      * @throws IOException se estan leyendo archivos
      */
     public void closeInput() throws IOException {
@@ -230,7 +237,7 @@ public class HttpService {
     }
     
 	/**
-	 * Este método lee un archivo html para luego poder publicarlo en el servidor
+	 * Este mï¿½todo lee un archivo html para luego poder publicarlo en el servidor
 	 * @param address correspone al nombre del archivo que se quiere leer
 	 * @return
 	 * @throws MalformedURLException
@@ -252,7 +259,7 @@ public class HttpService {
     }
     
     /**
-     * Este método lee una imagen .PNG y la convierte en Bytes para poder visualizarla 
+     * Este mï¿½todo lee una imagen .PNG y la convierte en Bytes para poder visualizarla 
      * @param adress corresponde al nombre de la imagen que se quiere visualizar
      * @return imageBytes imagen parseada a Bytes
      * @throws MalformedURLException 
@@ -272,9 +279,9 @@ public class HttpService {
     }
     
     /**
-     * Este método busca en todas las clases del package /app los métodos que contengan la anotación '@Web'
+     * Este mï¿½todo busca en todas las clases del package /app los mï¿½todos que contengan la anotaciï¿½n '@Web'
      * y los ubica en un hashMap
-     * @param direccion corresponde a la dirección del recurso que se desea obtener y que se encuentra ubicado en el package app
+     * @param direccion corresponde a la direcciï¿½n del recurso que se desea obtener y que se encuentra ubicado en el package app
      */
     public void receive(String direccion){
 		try {

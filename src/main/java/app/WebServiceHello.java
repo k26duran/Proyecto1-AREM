@@ -23,7 +23,7 @@ public class WebServiceHello {
 	/**
 	 * 
 	 * @param name
-	 * @return un HTML haciendo uso del paramétro solicitado
+	 * @return un HTML haciendo uso del paramï¿½tro solicitado
 	 */
 	@Web("ejemplo")
     public static String ejemploConParametro(String name) {
@@ -53,5 +53,23 @@ public class WebServiceHello {
         		"</html>\n" + 
         		"";
     }
+	
+	@Web("example")
+	public static String ejemploIndex() {
+		return"<!DOCTYPE html>\n" + 
+        		"<html>\n" + 
+        		"<head>\n" + 
+        		"  <meta charset=\"utf-8\" />\n" + 
+        		"  <title>Proyecto AREM</title>  \n" + 
+        		"</head>\n" + 
+        		"<body style=\"text-align: center\">   \n" +
+        		"<h1>Escribe tu nombre </h1>"+
+        		"<form action=\"/app/ejemplo\">	\n" +
+        		"  <input id=\"texto\" name=\"name\" type=\"text\">"+
+        		"</form>"+
+        		"</body>\n" +
+        		"</html>\n" + 
+        		"";
+	}
 
 }
