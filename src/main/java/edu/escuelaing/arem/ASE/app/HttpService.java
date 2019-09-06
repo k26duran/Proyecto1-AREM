@@ -1,205 +1,312 @@
 package edu.escuelaing.arem.ASE.app;
 
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.Vector;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
+
+import javax.imageio.ImageIO;
+
+import org.reflections.Reflections;
 
 
 public class HttpService {
 	
-	Method[] listM;
-	HashMap<String, MethodHandler> listaURLHandler;
+	private static HashMap<String, MethodHandler> listaURLHandler;
 	private static Socket clientSocket;
 	private static ServerSocket serverSocket = null;
-	String request ="";
-	private static final ClassLoader classLoader = ClassLoader.getSystemClassLoader();
-	
-	public void init() {
+	public static String address = "";
+    public static BufferedReader in;
+    private static Socket receiver;
+    
+	/**
+	 * Método que inicializa el atributo listaURLHandler que tendrá todos los métodos con anotaciones del package app
+	 */
+	public void init(){
 		try {
-			//receive("WebServiceHello");
-			List<Class<?>> classes= new ArrayList<Class<?>>();
-			classes= getClassesInPackage("app");
-			System.out.println(classes.toString());
+			listaURLHandler = new HashMap<String, MethodHandler>();
+			Reflections reflections = new Reflections("app");
+			Set<Class<? extends Object>> classes= reflections.getTypesAnnotatedWith(Web.class);
+			//System.out.println(classes.toString());
 			for(Class<?> c:classes) {
-				System.out.println("------");
-				receive(c.getCanonicalName());
+				receive(c.getName());
 			}
-			
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
 	}
-	
+	/**
+	 *  
+	 * @throws Exception
+	 */
 	public void listen() throws Exception{
-		try{
-			int port= getPort();
-			serverSocket = new ServerSocket(port);
-			System.out.println("Listen for port : " + port);
-		} catch(IOException e){
-			System.err.println("Could not listen on port: " + getPort());
-	        System.exit(1);
-		}
-		while(true){
-			try{
-				System.out.println("Ready to receive...");
-				clientSocket = serverSocket.accept();
-			} catch(IOException e){
-				System.err.println("Accept failed.");
-                System.exit(1);
-			}
-			PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-            BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-			String inputLine; 
-			while ((inputLine = in.readLine()) != null) {
-				System.out.println("Received: " + inputLine);
-				if (!in.ready()) {
-					break;
-				}
-				if(inputLine.contains("GET")){
-					request = inputLine.split(" ")[1];
-					System.out.println("Recurso solicitado:"+request);
-				}
-			}
-			if (request.contains("/apps")) {
-				returnApp(request);
-			} else if (request.contains("html")) {
-				System.out.println(request);
-				returnHtml(request);
-			} else if (request.contains("jpg")) {
-				returnImages(request, clientSocket);
-			} else{
-				notFound();
-			}
-			out.close();
-			in.close();
-
-		}
-
-	}
-	private static void notFound() throws IOException{
-		try{
-			PrintWriter out;
-			BufferedReader in = new BufferedReader(new FileReader(classLoader.getResource("notFound.html").getFile()));
-			out = new PrintWriter(clientSocket.getOutputStream(), true);
-			String result = "HTTP/1.1 200 OK\r\n" + "Content-Type: text/html\r\n" + "\r\n";
-			out.println(result);
-			while (in.ready()) {
-				out.println(in.readLine());
-			}
-			out.close();
-			in.close();
-
-		} catch(IOException e){
-			System.err.println("Error en notFound");
+		while (true){
+            serverSocket = runServer();
+            receiver = receiveRequest(serverSocket);
+            setRequest(receiver);       
+            postType(address,receiver);
+            closeInput();
+            receiver.close();
+            serverSocket.close();
 		}
 	}
-
-	private static void returnApp(String request) throws IOException{
-
-	}
-	private static void returnHtml(String request) throws IOException{
-		try{
-			PrintWriter out;
-			BufferedReader in = new BufferedReader(new FileReader(classLoader.getResource(request).getFile()));
-			out = new PrintWriter(clientSocket.getOutputStream(), true);
-			String result = "HTTP/1.1 200 OK\r\n" + "Content-Type: text/html\r\n" + "\r\n";
-			out.println(result);
-			while (in.ready()) {
-				out.println(in.readLine());
-			}
-			out.close();
-			in.close();
-
-		} catch(IOException e){
-			System.err.println("Error en returnHtml");
-		}
-	}
-	private static void returnImages(String request, Socket clientS) throws IOException{
-
-	}
+	/**
+	 * ServerSocket
+	 * @return
+	 */
+	public static ServerSocket runServer() {
+        
+        ServerSocket serverSocket = null;
+        try {
+            serverSocket = new ServerSocket(getPort());
+        } catch (IOException e) {
+            System.err.println("Could not listen on port: " + getPort());
+            System.exit(1);
+        }
+        return serverSocket;
+    }
+	/**
+	 * El socket se prepara para recibir solicitudes
+	 * @param serverSocket
+	 * @return
+	 */
+	public static Socket receiveRequest(ServerSocket serverSocket) {
 	
-	public void receive(String direccion){
+	    Socket request = null;        
+	    try {
+	        System.out.println("Ready to receive...");
+	        request = serverSocket.accept();
+	    } catch (IOException e) {
+	        System.err.println("Accept failed.");
+	        System.exit(1);
+	    }
+	    return request;
+	}
+
+	 /**
+     * En este método se identifica que tipo de solicitud se realizó al servidor
+     * @param address corresponde a la dirección del recurso que se desea obtener
+     * @param cc corresponde al socket que hace la solicitud
+	 * @throws Exception 
+     */
+    public static void postType(String address, Socket cs) throws Exception{
+        clientSocket = cs;
+        System.out.println("POST: " + address);
+        if (address.contains("/app")) {
+        	postApp(address);
+        }else if (address.contains(".html")){
+            postHtml(address);
+        }else if (address.contains(".png")){
+            postImage(address);
+        }else{
+            notFound404();
+        }
+    }
+    
+    /**
+     * Este método publica una página html que ha sido solicitada en el servidor,
+     * @param address corresponde al nombre del archivo que se quiere obtener
+     */
+    private static void postHtml(String request){
+        try{            
+            String outputLine;
+            String page = "HTTP/1.1 200 OK\r\n" +
+                          "Content-Type: text/html\r\n" +
+                          "\r\n" + readHTML(request);            
+            outputLine = page;
+            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+            out.println(outputLine);
+            out.close();
+        }catch (Exception ex){
+            notFound404();
+            System.err.println("Error: Archivo no encontrado");
+        }
+    }
+    /**
+     * Este método publica un recurso dentro de la listaURLHandler en el servidor
+     * @param address corresponde al path del recurso que se quiere obtener
+     * @throws IOException
+     */
+    private static void postApp(String address) throws IOException {
+    	PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+    	int limit = address.indexOf("/app");
+		String resource = "";
+		for (int k = limit; k < address.length() && address.charAt(k) != ' '; k++) {resource += address.charAt(k);}
+		try {
+			out.write("HTTP/1.1 200 OK\r\n" + "Content-Type: text/html\r\n" + "\r\n");
+			if(resource.contains(":")) {
+				int i = resource.indexOf(":");
+				out.write(listaURLHandler.get(resource.substring(0, i)).procesar(new Object[]{resource.substring(i+1)}));
+			}else { out.write(listaURLHandler.get(resource).procesar());}
+			out.close();
+		} catch (Exception e) {
+			notFound404();
+			System.err.println("Error: No es posible cargar el recurso " + address);
+		}
+    }
+    
+    /**
+     * Este método publica una imagen con extension PNG en el servidor,
+     * @param address Corresponde al nombre de la imagen solicitada
+     */
+    private static void postImage(String address){
+        try {
+            byte[] imageBytes; 
+            imageBytes = readImage(address);
+            DataOutputStream imageCode;            
+            imageCode = new DataOutputStream(clientSocket.getOutputStream());
+            imageCode.writeBytes("HTTP/1.1 200 OK \r\n");
+            imageCode.writeBytes("Content-Type: image/png\r\n");
+            imageCode.writeBytes("Content-Length: " + imageBytes.length);
+            imageCode.writeBytes("\r\n\r\n"); 
+            //La imagen se hace visible en el servidor
+            imageCode.write(imageBytes);            
+            imageCode.close();
+        } catch (IOException ex){
+            
+            notFound404();
+            System.err.println("Error: No se encontro la imagen");
+        }
+    }
+    
+    /**
+     * Se publica un página con un mensaje de error, esto se hace cuando un recurso no existe
+     */
+    private static void notFound404(){
+        try{            
+            String outputLine;
+            String page = "HTTP/1.1 200 OK\r\n" +
+                          "Content-Type: text/html\r\n" +
+                          "\r\n" + readHTML("/notfound.html");
+            
+            outputLine = page;
+            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+            out.println(outputLine);
+            out.close();
+        }catch (IOException ex){
+            System.err.println("Error en notFound");
+        }
+    }
+    /**
+     * 
+     * @param clientSocket 
+     * @throws IOException
+     */
+    public static void setRequest(Socket clientSocket) throws IOException{
+        in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+        String inputLine;        
+        while ((inputLine = in.readLine()) != null) {
+            System.out.println("Received: " + inputLine);
+            if (!in.ready()) {
+                break;
+            }
+            if(inputLine.contains("GET")){
+                address = inputLine.split(" ")[1];
+            }
+        }
+    }
+    
+    /**
+     * Este método cierra el archivo con el cual el servidor realiza su lectura
+     * @throws IOException se estan leyendo archivos
+     */
+    public void closeInput() throws IOException {
+        in.close();
+    }
+    
+	/**
+	 * Este método lee un archivo html para luego poder publicarlo en el servidor
+	 * @param address correspone al nombre del archivo que se quiere leer
+	 * @return
+	 * @throws MalformedURLException
+	 */
+    public static String readHTML(String address) throws MalformedURLException {        
+    	String html = "";
+    	try {            
+            FileReader file = new FileReader("src/main/java/app/html"+address);
+            BufferedReader reader = new BufferedReader(file);
+            String inputLine = "";
+            
+            while ((inputLine = reader.readLine()) != null) {
+                html += inputLine + "\n";
+            }
+        } catch (IOException io) {
+            System.err.println(io);
+        }
+        return html;
+    }
+    
+    /**
+     * Este método lee una imagen .PNG y la convierte en Bytes para poder visualizarla 
+     * @param adress corresponde al nombre de la imagen que se quiere visualizar
+     * @return imageBytes imagen parseada a Bytes
+     * @throws MalformedURLException 
+     */
+    public static byte[] readImage(String address) throws MalformedURLException {        
+        byte[] imageBytes = null;
+        try {     
+            File image = new File("src/main/java/app/images"+address);
+            FileInputStream inputImage = new FileInputStream(image);
+            imageBytes = new byte[(int) image.length()];
+            inputImage.read(imageBytes);
+            
+        } catch (IOException io) {
+            System.err.println(io);
+        }
+        return imageBytes;
+    }
+    
+    /**
+     * Este método busca en todas las clases del package /app los métodos que contengan la anotación '@Web'
+     * y los ubica en un hashMap
+     * @param direccion corresponde a la dirección del recurso que se desea obtener y que se encuentra ubicado en el package app
+     */
+    public void receive(String direccion){
 		try {
 			Class<?> c= Class.forName(direccion);
-			listM= c.getDeclaredMethods();
-			listaURLHandler = new HashMap<String, MethodHandler>();
-			
+			Method[] listM= c.getDeclaredMethods();	
 			for(Method e: listM) {
 				if(e.isAnnotationPresent(Web.class)) {
 					MethodHandler handler = new MethodHandler(e);
-					listaURLHandler.put(e.getDeclaredAnnotation(Web.class).value(), handler);
-					System.out.println(handler.procesar());
+					listaURLHandler.put("/app/"+e.getDeclaredAnnotation(Web.class).value(), handler);
+					//System.out.println(handler.procesar());
 				}
 			}
 			
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-		
+		}	
 	}
-	public static final List<Class<?>> getClassesInPackage(String packageName) {
-	    String path = packageName.replaceAll("\\.", File.separator);
-	    List<Class<?>> classes = new ArrayList<Class<?>>();
-	    String[] classPathEntries = System.getProperty("java.class.path").split(
-	            System.getProperty("path.separator")
-	    );
-
-	    String name;
-	    for (String classpathEntry : classPathEntries) {
-	        if (classpathEntry.endsWith(".jar")) {
-	            File jar = new File(classpathEntry);
-	            try {
-	                JarInputStream is = new JarInputStream(new FileInputStream(jar));
-	                JarEntry entry;
-	                while((entry = is.getNextJarEntry()) != null) {
-	                    name = entry.getName();
-	                    if (name.endsWith(".class")) {
-	                        if (name.contains(path) && name.endsWith(".class")) {
-	                            String classPath = name.substring(0, entry.getName().length() - 6);
-	                            classPath = classPath.replaceAll("[\\|/]", ".");
-	                            classes.add(Class.forName(classPath));
-	                        }
-	                    }
-	                }
-	            } catch (Exception ex) {
-	                // Silence is gold
-	            }
-	        } else {
-	            try {
-	                File base = new File(classpathEntry + File.separatorChar + path);
-	                for (File file : base.listFiles()) {
-	                    name = file.getName();
-	                    if (name.endsWith(".class")) {
-	                        name = name.substring(0, name.length() - 6);
-	                        classes.add(Class.forName(packageName + "." + name));
-	                    }
-	                }
-	            } catch (Exception ex) {
-	                // Silence is gold
-	            }
-	        }
-	    }
-
-	    return classes;
-	}
-
+    
+	/**
+	 * 
+	 * @return retorna un puerto
+	 */
 	public static int getPort() {
         if (System.getenv("PORT") != null) {
             return Integer.parseInt(System.getenv("PORT"));

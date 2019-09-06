@@ -9,16 +9,26 @@ public class MethodHandler implements Handler {
 	public MethodHandler(Method m) {
 		this.m=m;
 	}
-	
+	/**
+	 * No recibe parametros
+	 */
 	public String procesar() {
 		try {
-			return (String) m.invoke(null, null);
+			return m.invoke(null, null).toString();
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			 e.printStackTrace();
 			 return e.getMessage();
 		}
 	}
+	/**
+	 * 
+	 * @param arg
+	 * @return los métodos de cierto objeto
+	 * @throws Exception
+	 */
+	public  String procesar(Object[] arg) throws Exception {
+        return m.invoke(m, arg).toString();
+    }
 	
 
 }
