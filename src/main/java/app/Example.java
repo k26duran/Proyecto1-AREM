@@ -3,7 +3,7 @@ package app;
 import edu.escuelaing.arem.ASE.app.Web;
 
 @Web("Service")
-public class Hola {
+public class Example {
 	
 	@Web("cuadrado2")
 	public static String square() {

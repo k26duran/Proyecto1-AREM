@@ -1,5 +1,6 @@
 package edu.escuelaing.arem.ASE.app;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 public class MethodHandler implements Handler {
@@ -26,8 +27,13 @@ public class MethodHandler implements Handler {
 	 * @return los métodos de cierto objeto
 	 * @throws Exception
 	 */
-	public  String procesar(Object[] arg) throws Exception {
-        return m.invoke(m, arg).toString();
+	public  String procesar(Object[] arg) {
+        try {
+			return m.invoke(m, arg).toString();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return e.getMessage();
+		}
     }
 	
 

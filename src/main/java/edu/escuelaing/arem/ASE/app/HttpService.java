@@ -1,35 +1,19 @@
 package edu.escuelaing.arem.ASE.app;
 
-import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Set;
-import java.util.Vector;
-import java.util.jar.JarEntry;
-import java.util.jar.JarInputStream;
-
-import javax.imageio.ImageIO;
-
 import org.reflections.Reflections;
 
 
@@ -38,8 +22,8 @@ public class HttpService {
 	private static HashMap<String, MethodHandler> listaURLHandler;
 	private static Socket clientSocket;
 	private static ServerSocket serverSocket = null;
-	public static String address = "";
-    public static BufferedReader in;
+	private static String address = "";
+    private static BufferedReader in;
     private static Socket receiver;
     
 	/**
